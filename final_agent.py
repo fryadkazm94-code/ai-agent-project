@@ -7,7 +7,6 @@ import threading
 
 import cv2
 
-# Make project root importable
 ROOT = Path(__file__).resolve().parent
 sys.path.append(str(ROOT))
 
@@ -17,26 +16,23 @@ from agents.decision_agent import MoodDecisionAgent
 from agents.action_agent import ActionAgent
 
 
-WINDOW_SECONDS = 30             # measurement window
-EMOTION_SAMPLE_INTERVAL = 8.0   # slower = smoother camera
-SHOW_CAMERA = True              # set False if you don't want the preview window
+WINDOW_SECONDS = 30             
+EMOTION_SAMPLE_INTERVAL = 8.0   
+SHOW_CAMERA = True              
 
 
 def get_env_python(env_name: str) -> Path:
-    p = ROOT / env_name / "Scripts" / "python.exe"   # Windows
+    p = ROOT / env_name / "Scripts" / "python.exe"  
     if p.exists():
         return p
-    p = ROOT / env_name / "bin" / "python"           # Linux/macOS fallback
+    p = ROOT / env_name / "bin" / "python"          
     if p.exists():
         return p
     return Path()
 
 
 def call_emotion_worker(face_crop_bgr, emotion_python: Path, worker_script: Path, temp_img_path: Path):
-    """
-    Save face crop and call emotion worker in emotion_env.
-    Returns: {"emotion": "...", "confidence": ...} or None
-    """
+  
     try:
         ok = cv2.imwrite(str(temp_img_path), face_crop_bgr)
         if not ok:
@@ -87,7 +83,6 @@ def start_emotion_job(state, face_crop, emotion_python, worker_script, temp_img_
         try:
             emo = call_emotion_worker(crop_copy, emotion_python, worker_script, temp_img_path)
 
-            # If window changed while worker was running, ignore stale result
             if window_seq != state.get("window_seq"):
                 return
 
@@ -134,10 +129,10 @@ def summarize_emotions(samples):
 def new_window_state():
     return {
         "window_start_ts": None,
-        "window_seq": 0,                  # increments whenever window resets/restarts
+        "window_seq": 0,                  
         "last_emotion_sample_ts": 0.0,
         "emotion_samples": [],
-        "emotion_busy": False,            # background worker running?
+        "emotion_busy": False,            
         "yawn_any": False,
         "max_yawn_duration": 0.0,
         "max_mar": 0.0,
@@ -217,13 +212,11 @@ def main():
     temp_dir.mkdir(exist_ok=True)
     temp_img_path = temp_dir / "emotion_face.jpg"
 
-    # face_env-side agents
     face_agent = FaceDetectionAgent()
     yawn_agent = YawnAgent()
     decision_agent = MoodDecisionAgent()
     action_agent = ActionAgent(log_path=str(ROOT / "logs" / "events.log"))
 
-    # Camera (Windows DirectShow + low resolution for speed)
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     if not cap.isOpened():
         cap = cv2.VideoCapture(0)
